@@ -1,4 +1,4 @@
-*Exmple Description
+* Exmple Description
 
 > Create a VM in remote Openstack environment  
 > deploy a app.  
