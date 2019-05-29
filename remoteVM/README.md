@@ -7,4 +7,5 @@
 # Command to run
 
 * make sure to autorize openstack client
-* opera deploy test service.yml
+* Deploy the service
+'''opera deploy test service.yml'''
