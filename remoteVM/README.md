@@ -8,6 +8,4 @@
 
 * make sure to autorize openstack client
 * Deploy the service  
-'''
-opera deploy test service.yml
-'''
+```opera deploy test service.yml```
