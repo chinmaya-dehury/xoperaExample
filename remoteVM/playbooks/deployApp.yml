@@ -1,0 +1,10 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Install the APP in the temp dir
+      copy:
+        dest: /tmp/test.txt
+        content: |
+          This is a temporary file in the directory.
+
