@@ -44,7 +44,8 @@ Deploy the "readRmtCnt" application *$HOME* directory
  Run the shell script file  
 
 # Assumption
-Certain number of files are already created in remote vm *VTWO*  
+Certain number of files are already created in remote vm *VTWO*    
+Both the VMs are already created and in running state  
 
 ## Command to run
 cd path/to/service.yml
