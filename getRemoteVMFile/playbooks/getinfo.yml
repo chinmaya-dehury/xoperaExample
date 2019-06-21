@@ -1,0 +1,12 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+        
+    - fetch:
+        src: "/home/centos/.ssh/id_rsa.pub"
+        dest: "/tmp/opera2/"
+        flat: yes
+...
+
+

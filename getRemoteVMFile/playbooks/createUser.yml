@@ -1,0 +1,15 @@
+---
+- hosts: all
+  become: yes
+  tasks:    
+    - os_user:
+      cloud: mycloud
+      state: present
+      name: centos
+      password: secret
+      email: demo@example.com
+      domain: default
+      default_project: demo
+...
+
+
