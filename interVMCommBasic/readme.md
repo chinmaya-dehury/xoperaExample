@@ -2,6 +2,9 @@ VM-1: VONE
 VM-2: VTWO  
 
 # Description
+Three VMs are involved in this. 
+Local VM, where the code is present and xopera command will be issues. Second VM (VTWO), where the application will be deployed.
+Third VM (VTWO), from where the content will be read. *VONE* will commnuicate to *VTWO* once the application is deployed.  
 The xopera command will be executed in Local VM.   
 Upon execution, *readRmtCnt* application will be deployed atop *VONE* vm. The deployed application will read the content of multiple remote files present in *VTWO* vm.
 
