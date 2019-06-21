@@ -12,3 +12,6 @@ Location to keep the fetched file: /tmp/opera2/
 ## Command to run
 cd path/to/service.yml
 opera deploy test service.yml
+
+## Assumption  
+Both the VMs are already created and in running state  
