@@ -9,3 +9,6 @@ path to remote file: /home/centos/.ssh/id_rsa.pub
 ## Local VM
 Location to keep the fetched file: /tmp/opera2/
 
+## Command to run
+cd path/to/service.yml
+opera deploy test service.yml
