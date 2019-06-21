@@ -1,0 +1,13 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Set authorized key taken from local file system
+      authorized_key:
+        user: centos
+        state: present
+        key: "{{ lookup('file', '/tmp/opera2/id_rsa.pub') }}"
+...
+
+
+
