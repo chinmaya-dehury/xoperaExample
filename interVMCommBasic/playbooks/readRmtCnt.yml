@@ -1,0 +1,56 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+
+    - name: Install readfile.sh in HOME directory
+      copy:
+        dest: /tmp/readfile.sh
+        mode: '0777'
+        owner: 'centos'
+        content: |
+          cd /tmp
+          mkdir rmtdb
+          cd rmtdb
+          echo $(pwd) > fileCnt.txt
+          echo "Who I am: $(whoami)" >> fileCnt.txt
+          echo $(runuser -l centos -c "ssh -q centos@172.17.64.185 ls /tmp/db") >> fileCnt.txt
+          echo $(runuser -l centos -c "ssh -q centos@172.17.64.185 ls /tmp/db") > fileList
+          for f in $(cat fileList)
+          do
+              sleep 1
+              echo $(runuser -l centos -c "ssh -q centos@172.17.64.185 cat /tmp/db/$f") >> fileCnt.txt
+          done
+          echo "This is Done" >> fileCnt.txt
+          rm fileList
+          exit 0
+    - name: execute the above script
+      shell: |
+         cd /tmp
+         chmod +x readfile.sh
+         ./readfile.sh
+...
+
+          echo $(sudo ssh -q centos@172.17.64.185 ls /tmp) >> fileCnt.txt
+          echo "Who I am: $(whoami)" >> fileCnt.txt
+          
+          echo $(runuser -l centos -c "ssh -q centos@172.17.64.185 ls /tmp/db") >> fileCnt.txt 
+    - name: execute the above script
+      shell: |
+          cd /tmp
+          mkdir rmtdb
+          cd rmtdb
+          touch fileCnt.txt
+          for f in $(ssh -q centos@172.17.64.185 ls /tmp/db)
+          do
+              sleep 1
+              ssh -q centos@172.17.64.185 cat /tmp/db/$f >> fileCnt.txt
+          done
+          cd $HOME
+          exit 0
+
+              sleep 1
+              ssh -q centos@172.17.64.185 cat /tmp/db/$f >> /tmp/rmtdb/fileCnt.txt
+          done
+
