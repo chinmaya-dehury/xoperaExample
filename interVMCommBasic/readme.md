@@ -43,3 +43,6 @@ Deploy the "readRmtCnt" application *$HOME* directory
 # Assumption
 Certain number of files are already created in remote vm *VTWO*  
 
+## Command to run
+cd path/to/service.yml
+opera deploy test service.yml
