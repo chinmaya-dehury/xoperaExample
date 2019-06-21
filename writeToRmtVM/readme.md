@@ -12,3 +12,6 @@ This would modify $HOME/.ssh/authorized_keys file
 Location of public key: /tmp/opera/id_rsa.pub  
 The content of the */tmp/opera/id_rsa.pub* would be appended to the end of *$HOME/.ssh/authorized_keys* present in remote VM  
 
+## Command to run
+cd path/to/service.yml
+opera deploy test service.yml
