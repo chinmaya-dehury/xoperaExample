@@ -14,4 +14,4 @@ cd path/to/service.yml
 opera deploy test service.yml
 
 ## Assumption  
-Both the VMs are already created and in running state  
+The VM is already created and in running state  
