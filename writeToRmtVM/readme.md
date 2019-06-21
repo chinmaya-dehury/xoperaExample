@@ -15,3 +15,6 @@ The content of the */tmp/opera/id_rsa.pub* would be appended to the end of *$HOM
 ## Command to run
 cd path/to/service.yml
 opera deploy test service.yml
+
+## Assumption
+The VM is already created and in running state  
