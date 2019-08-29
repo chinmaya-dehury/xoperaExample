@@ -20,7 +20,7 @@
 # Add the line : 
 #    host    all  all 0.0.0.0/0   md5
 
-#        content: "{{ hostvars['opera']['ansible_eth0']['ipv4']['address'] }}" 
+
 
 ---
 - hosts: all
