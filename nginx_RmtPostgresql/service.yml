@@ -1,0 +1,235 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+node_types: 
+  
+  my.nodes.VM.OpenStack:
+    derived_from: tosca.nodes.Compute
+    properties:
+      name:
+        type: string
+        description: Name that should be given to the VM in OpenStack
+      image:
+        type: string
+        description: OpenStack image id (image names are not accepted)
+      flavor:
+        type: string
+        description: OpenStack flavor id (flavor names are not accepted)
+      network:
+        type: string
+        description: OpenStack network id (network names are not accepted)
+      key_name:
+        type: string
+        description: OpenStack SSH key name that should be placed on the VM
+      boot_from_volume:
+        type: boolean
+        description: true_if it has to boot from a volume else_false
+      volume_size:
+        type: integer
+        description: size of vloume in GB 
+      boot_volume:
+        type: string
+        description: boot from the given volume id
+      ip:
+        type: string
+        description: static ip of the VM
+    attributes:
+      id:
+        type: string
+        description: OpenStack id of the VM
+    
+    capabilities:
+      host:
+        type: tosca.nodes.SoftwareComponent
+        valid_source_types: [my.nodes.database]
+
+    interfaces:
+      Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
+        create:
+          inputs:
+            vm_name:  { default: { get_property: [ SELF, name     ] } }
+            flavor:   { default: { get_property: [ SELF, flavor   ] } }
+            network:  { default: { get_property: [ SELF, network  ] } }
+            key_name: { default: { get_property: [ SELF, key_name ] } }
+            boot_from_volume: { default: { get_property: [ SELF, boot_from_volume ] } }
+            boot_volume: { default: { get_property: [ SELF, boot_volume ] } }
+            ip: { default: { get_property: [ SELF, ip ] } }
+          implementation: playbooks/vm/create.yml
+        delete:
+          inputs:
+            id: { default: { get_attribute: [ SELF, id ] } }
+          implementation: playbooks/vm/delete.yml
+
+  my.nodes.database:
+    derived_from: tosca.nodes.SoftwareComponent
+    properties:
+      db_name:
+        type: string
+        description: name of the database
+      db_user:
+        type: string
+        description: User name of the database
+      db_password:
+        type: string
+        description: password of the database
+      host_ip_prop:
+        type: string
+        description: ip of the host machine
+    attributes:
+      host_ip_attr:
+        type: string
+        description: ip of the host where database is deployed
+    interfaces:
+      Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
+        create:
+          inputs:
+            db_name:  { default: { get_property: [ SELF, db_name     ] } }
+            db_user:   { default: { get_property: [ SELF, db_user   ] } }
+            db_password:  { default: { get_property: [ SELF, db_password ] } }
+          implementation: playbooks/db/installdbServr.yml
+        # delete:
+        #   inputs:
+        #     id: { default: { get_attribute: [ SELF, id ] } }
+        #   implementation: playbooks/vm/delete.yml
+    requirements:
+      - host:
+          capability: tosca.capabilities.Compute
+          relationship: my.relationships.databaseHosting
+
+  my.nodes.Nginx:
+    derived_from: tosca.nodes.SoftwareComponent
+    attributes:
+      site_config_dir:
+        type: string
+        description: Location of nginx site configs
+    capabilities:
+      host:
+        type: tosca.capabilities.Compute
+        valid_source_types: [my.nodes.Nginx.Site]
+    interfaces:
+      Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
+        create:
+          implementation:
+            primary: playbooks/nginx/install.yml
+        delete:
+          implementation:
+            primary: playbooks/nginx/uninstall.yml
+
+  my.nodes.Nginx.Site:
+    derived_from: tosca.nodes.SoftwareComponent
+    properties:
+        db_ip:
+            type: string
+            description: IP/host of the remote database
+    requirements:
+      - host:
+          capability: tosca.capabilities.Compute
+          relationship: my.relationships.NginxSiteHosting
+    interfaces:
+      Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
+        create:
+          inputs:
+            db_ip:  { default: { get_property: [ SELF, db_ip     ] } }
+          implementation: playbooks/web/create.yml
+
+relationship_types:
+  my.relationships.NginxSiteHosting:
+    derived_from: tosca.relationships.HostedOn
+    valid_target_types: [my.nodes.Nginx]
+    interfaces:
+      Configure:
+        add_source:
+          implementation:
+            primary: playbooks/nginx/reload.yml
+
+  my.relationships.databaseHosting:
+    derived_from: tosca.relationships.HostedOn
+    valid_target_types: [my.nodes.VM.OpenStack]
+
+topology_template:
+  node_templates:
+    vm1:
+      type: my.nodes.VM.OpenStack
+      properties:
+        name: one_nginx_host
+        flavor: 99156937-1374-4eb7-89c0-639217eba7d4
+        network: 7c9f4afb-fff3-4729-9d37-2082f74e4096
+        key_name: rem-VM2
+        boot_from_volume: True
+        boot_volume: 365ee0bb-cb8c-4ac4-952a-52d659e7449a
+        ip: 172.17.66.50
+    
+      requirements:
+        - dependency: dbserver1
+
+    vm2:
+      type: my.nodes.VM.OpenStack
+      properties:
+        name: two_nginx_host
+        flavor: 99156937-1374-4eb7-89c0-639217eba7d4
+        network: 7c9f4afb-fff3-4729-9d37-2082f74e4096
+        key_name: rem-VM2
+        boot_from_volume: True
+        boot_volume: b7b608d7-4bc0-42f8-bc64-dd579d302e44
+        ip: 172.17.67.131
+     
+      
+
+    
+    nginxServer1:
+      type: my.nodes.Nginx
+      requirements:
+        - host: vm1 
+
+    site:
+      type: my.nodes.Nginx.Site      
+      requirements:
+        - host: nginxServer1
+      properties:
+        db_ip: 172.17.67.131
+      interfaces:
+        Standard:
+          inputs: 
+            site_config_dir:
+              get_attribute: [ SELF, nginxServer1, site_config_dir ]
+          
+    
+    dbserver1:
+      type: my.nodes.database
+      properties:
+        db_name:  database1
+        db_user:   centos
+        db_password:  centos
+      requirements:
+        - host: vm2
+      
+
+
+    # configVM2:
+    #   type: tosca.nodes.SoftwareComponent
+    #   requirements:
+    #     - host: vm2
+    #   interfaces:
+    #     Standard:
+    #       type: tosca.interfaces.node.lifecycle.Standard
+    #       create:
+    #         # inputs:
+    #         #   ip: 172.17.64.225
+    #         implementation: playbooks/configVM2/uploadPubKey.yml 
+
+    # dbServer:
+    #   type: tosca.nodes.SoftwareComponent
+    #   requirements:
+    #     - host: vm2
+    #   interfaces:
+    #     Standard:
+    #       type: tosca.interfaces.node.lifecycle.Standard
+    #       create:
+    #         inputs:
+    #           ip: 172.17.64.225
+    #         implementation: playbooks/db/installdbServr.yml   
+    
+
