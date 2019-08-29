@@ -1,0 +1,178 @@
+# make sure to remove the postgresql before running this file
+
+# sudo yum remove postgres\*
+# sudo rm -r  /var/lib/pgsql
+# sudo mv /var/lib/pgsql  /var/lib/old.pgsql
+
+# postgresql command line; psql <databasename> -U username -W passowrd
+# postgresql command line; psql <databasename>
+
+# list of table command in psql; \dt
+# list of table command in psql; \z
+
+# list of users: \du OR \du+
+
+# config file: sudo vim /var/lib/pgsql/data/postgresql.conf
+# Add the line: 
+#       listen_addresses = '*'
+
+# config file:  sudo vim /var/lib/pgsql/data/pg_hba.conf
+# Add the line : 
+#    host    all  all 0.0.0.0/0   md5
+
+#        content: "{{ hostvars['opera']['ansible_eth0']['ipv4']['address'] }}" 
+
+---
+- hosts: all
+  become: yes
+  gather_facts: True
+
+  tasks:
+# Add the task to get the host ip
+    - debug: 
+        var: hostvars
+        
+    - name: Set attributes (get host ip)
+      set_stats:
+        data:
+          host_ip_attr: "{{ hostvars['opera']['ansible_host'] }}"
+    
+    - name: store the IP of the host somewhere for NO purpose
+      copy:
+        content: "{{ hostvars['opera']['ansible_eth0']['ipv4']['address'] }}"
+        dest: "/tmp/host_ip.txt"  
+ 
+        
+    - name: Ensure bash, OpenSSl, and libssl are the latest versions
+      yum: name={{item}} update_cache=true state=latest
+      with_items:
+          - bash
+#          #- openssl
+#          #- libssl-dev
+#          #- libssl-doc
+    - name: Yum Install Packages
+      yum: name={{item}} update_cache=true state=latest
+      with_items:
+         - postgresql-server
+         - postgresql-contrib
+# #        - libpq-dev
+         - python-psycopg2
+    - name: initialize database
+      command : postgresql-setup initdb
+      
+# Configure the postgresql for remote connection
+    - name: Edit /var/lib/pgsql/data/postgresql.conf file
+      become: yes
+      become_method: sudo 
+      lineinfile:
+        path: /var/lib/pgsql/data/postgresql.conf
+        line: "listen_addresses = '*'"
+        insertbefore: BOF
+        
+    - name: Edit /var/lib/pgsql/data/pg_hba.conf file 
+      become: yes
+      become_method: sudo
+      lineinfile:
+        path: /var/lib/pgsql/data/pg_hba.conf
+        line: "host    all  all 0.0.0.0/0   md5"
+        insertbefore: BOF
+        
+    - name: Start postgresql
+      become: yes
+#      become_user: postgres
+      become_method: sudo
+      command: systemctl start postgresql
+        
+#    - name: Ensure the PostgreSQL service is running
+#     sudo_user: postgres
+#      become: yes
+#      become_user: postgres
+#      become_method: sudo
+#      systemd:
+#         state: reloaded
+#         name: postgresql
+#         enabled: yes
+#         daemon_reload: yes
+#         scope: system
+#      service: name=postgresql state=started enabled=yes
+    
+    - name: Ensure database is created
+      sudo_user: postgres
+      postgresql_db: name={{ db_name }}
+                 encoding='UTF-8'
+                 lc_collate='en_US.UTF-8'
+                 lc_ctype='en_US.UTF-8'
+                 template='template0'
+                 state=present
+
+    - name: Ensure user has access to the database
+      sudo_user: postgres
+      postgresql_user: db={{ db_name }}
+                   name={{ db_user }}
+                   password={{ db_password }}
+                   priv=ALL
+                   state=present
+                   
+#    - name: Ensure user does not have unnecessary privileges
+#      sudo_user: postgres
+#      postgresql_user: name={{ db_user }}
+#                   role_attr_flags=NOSUPERUSER,NOCREATEDB
+#                   state=present
+
+    - name: create a test table named table1
+      sudo_user: postgres
+      postgresql_table:        
+        name: table1
+        owner: "{{ db_user }}"
+        columns:
+          - id int primary key
+          - name text
+          - age int
+        db: database1
+
+    - name: Simple select query to database1 db (just after setup)
+#      become: yes
+#      become_user: postgres
+#      become_method: sudo
+      sudo_user: postgres
+      postgresql_query:
+        db: database1
+#        login_host: 172.17.xx.yy
+        login_host: "{{ hostvars['opera']['ansible_host'] }}"
+        login_user: centos
+        login_password: centos  
+        query:  SELECT * FROM table1
+      register: table1
+      
+    - name: copy the Select query output to a local file
+      copy:
+        content: "{{ table1 }}"
+        dest: "/tmp/SelQryOut.txt"
+    
+    - name: copy the output (success result) to a local file
+      copy:
+        content: "{{ table1.query_result }}"
+        dest: "/tmp/table1_result.txt"
+
+      
+               
+    - name: Collect PostgreSQL version and extensions
+      become: yes
+      become_user: postgres
+      become_method: sudo
+      postgresql_info:
+        db: database1
+#        login_host: 172.17.67.131
+        login_host: "{{ hostvars['opera']['ansible_host'] }}"
+        login_user: centos
+        login_password: centos
+        filter: ver*,ext*
+      register: version_ext_db
+      
+    - name: copy the output to a local file
+      copy:
+        content: "{{ version_ext_db }}"
+        dest: "/tmp/version_ext_db.txt"       
+
+
+
