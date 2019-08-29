@@ -1,0 +1,86 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: True
+
+  tasks:
+    - name: store the IP of the database host somewhere for NO purpose
+      copy:
+        content: "{{ hostvars }}"
+        dest: "/tmp/host_ip.txt"
+    - name: GET the IP of the db machine
+      copy:
+        content: "{{ db_ip }}"
+        dest: "/tmp/db_ip.txt"
+  
+    - name: Simple select query to remote database 
+      become: yes
+      become_user: centos
+      become_method: sudo
+      postgresql_query:
+        db: database1
+        login_host: "{{ db_ip }}"
+        login_user: centos
+        login_password: centos  
+        query:  SELECT * FROM table1
+      register: table1
+      
+        
+    - name: Install sample site in VM1
+      copy:
+        dest: /usr/share/nginx/html/index.html
+        content: |
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <title>Hello World!</title>
+          </head>
+          <body>
+            <h1>this the demo for New member.</h1>
+            <p>With little content ;)</p>
+            <p>{{ table1.query_result }} </p>
+          </body>
+          </html>
+          
+    - name: Yum Install Packages
+      yum: name={{item}} update_cache=true state=latest
+      with_items:
+         - python-psycopg2
+      register: installation
+    
+    - name: copy the output to a local file
+      copy:
+        content: "{{ installation }}"
+        dest: "/tmp/installation.txt"
+#      delegate_to: localhost
+          
+    - name: Simple select query to acme db
+      become: yes
+      become_user: centos
+      become_method: sudo
+      postgresql_query:
+        db: database1
+        login_host: "{{ db_ip }}"
+        login_user: centos
+        login_password: centos  
+        query: SELECT version()
+      
+
+          
+    - name: Collect PostgreSQL version and extensions (frm webserver)
+      become: yes
+      become_user: centos
+      become_method: sudo
+      postgresql_info:
+        db: database1
+        login_host: 172.17.67.131
+        login_user: centos
+        login_password: centos
+        filter: ver*,ext* 
+        
+    # - fetch:
+    #     src: /home/centos/.ssh/id_rsa.pub
+    #     dest: /tmp/opera/
+    #     flat: yes
+    #     fail_on_missing: yes
+    
