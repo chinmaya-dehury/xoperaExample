@@ -88,10 +88,6 @@ node_types:
             db_user:   { default: { get_property: [ SELF, db_user   ] } }
             db_password:  { default: { get_property: [ SELF, db_password ] } }
           implementation: playbooks/db/installdbServr.yml
-        # delete:
-        #   inputs:
-        #     id: { default: { get_attribute: [ SELF, id ] } }
-        #   implementation: playbooks/vm/delete.yml
     requirements:
       - host:
           capability: tosca.capabilities.Compute
@@ -160,8 +156,7 @@ topology_template:
         key_name: rem-VM2
         boot_from_volume: True
         boot_volume: 365ee0bb-cb8c-4ac4-952a-52d659e7449a
-        ip: 172.17.66.50
-    
+#        ip: 172.17.xx1.yy1    
       requirements:
         - dependency: dbserver1
 
@@ -174,10 +169,9 @@ topology_template:
         key_name: rem-VM2
         boot_from_volume: True
         boot_volume: b7b608d7-4bc0-42f8-bc64-dd579d302e44
-        ip: 172.17.67.131
+#       ip: 172.17.xx2.yy2
      
       
-
     
     nginxServer1:
       type: my.nodes.Nginx
@@ -189,7 +183,7 @@ topology_template:
       requirements:
         - host: nginxServer1
       properties:
-        db_ip: 172.17.67.131
+        db_ip: 172.17.xx2.yy2
       interfaces:
         Standard:
           inputs: 
@@ -206,30 +200,5 @@ topology_template:
       requirements:
         - host: vm2
       
-
-
-    # configVM2:
-    #   type: tosca.nodes.SoftwareComponent
-    #   requirements:
-    #     - host: vm2
-    #   interfaces:
-    #     Standard:
-    #       type: tosca.interfaces.node.lifecycle.Standard
-    #       create:
-    #         # inputs:
-    #         #   ip: 172.17.64.225
-    #         implementation: playbooks/configVM2/uploadPubKey.yml 
-
-    # dbServer:
-    #   type: tosca.nodes.SoftwareComponent
-    #   requirements:
-    #     - host: vm2
-    #   interfaces:
-    #     Standard:
-    #       type: tosca.interfaces.node.lifecycle.Standard
-    #       create:
-    #         inputs:
-    #           ip: 172.17.64.225
-    #         implementation: playbooks/db/installdbServr.yml   
     
 
